@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐢 字母消消乐 · 26字母 · 计时 · 音效</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #ffdde1 0%, #ee9ca7 100%);
+      font-family: 'Comic Sans MS', 'Chalkboard SE', '幼圆', 'Yuanti SC', cursive, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .game-container {
+      background-color: #fff5e6;
+      border-radius: 72px 72px 48px 48px;
+      box-shadow: 0 16px 0 #b0826e, 0 24px 32px rgba(0, 0, 0, 0.2);
+      padding: 28px 32px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 6px solid #fbcba1;
+      max-width: 720px;
+      width: 100%;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2.6rem;
+      color: #864c3e;
+      margin: 0 0 8px;
+      text-shadow: 4px 4px 0 #ffdbb5;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 span {
+      font-size: 2.8rem;
+    }
+
+    .score-board {
+      background: #fde5d4;
+      border-radius: 100px;
+      padding: 8px 24px;
+      margin-bottom: 18px;
+      border: 3px solid #b98e7a;
+      box-shadow: inset 0 -4px 0 #ad7f6b;
+      font-size: 1.4rem;
+      color: #5a3e2e;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .score-board span {
+      background: #ffb38b;
+      border-radius: 40px;
+      padding: 2px 16px;
+      color: #442211;
+    }
+
+    .timer-badge {
+      background: #b5e3c8;
+      border-radius: 40px;
+      padding: 2px 16px;
+      color: #1d4a2e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1.3rem;
+      border: 2px solid #8bc9a8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      background: #ebc8b0;
+      padding: 22px 22px;
+      border-radius: 48px;
+      border: 5px dashed #ab7e66;
+      margin: 8px 0 22px;
+      box-shadow: inset 0 0 0 6px #f7e3d3, 0 10px 0 #8a5e4b;
+    }
+
+    .card {
+      width: 78px;
+      height: 78px;
+      background: #fffaee;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      font-weight: bold;
+      color: #3d2b1f;
+      box-shadow: 0 8px 0 #b38d75, 0 10px 16px rgba(0, 0, 0, 0.15);
+      transition: all 0.08s ease;
+      cursor: pointer;
+      border: 3px solid #fdebd0;
+      text-shadow: 2px 2px 0 #efd5b8;
+      transform: translateY(0px);
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded', sans-serif;
+      position: relative;
+    }
+
+    .card.speaking::after {
+      content: "🔊";
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      font-size: 1.2rem;
+      background: #fff7d6;
+      border-radius: 50%;
+      padding: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      animation: popSound 0.3s ease;
+    }
+
+    @keyframes popSound {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .card.selected {
+      background: #ffe66d;
+      box-shadow: 0 4px 0 #c49b3f, 0 12px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(4px);
+      border-color: #f3b33d;
+      color: #2e1e0e;
+    }
+
+    /* 错误抖动 */
+    .card.wrong {
+      animation: shakeWrong 0.5s ease;
+    }
+
+    @keyframes shakeWrong {
+      0%, 100% { transform: translateX(0); background: #ffcccc; }
+      20% { transform: translateX(-8px); background: #ff9999; }
+      40% { transform: translateX(8px); background: #ff6666; }
+      60% { transform: translateX(-6px); background: #ff9999; }
+      80% { transform: translateX(6px); background: #ffcccc; }
+    }
+
+    .card.eliminated {
+      visibility: hidden;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: visibility 0.2s, opacity 0.2s;
+    }
+
+    .card.eliminating {
+      animation: zoomAway 0.65s ease-in forwards;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @keyframes zoomAway {
+      0% {
+        transform: scale(1);
+        background: #ffe66d;
+        box-shadow: 0 8px 0 #b38d75, 0 10px 16px rgba(0, 0, 0, 0.15);
+      }
+      30% {
+        transform: scale(1.6);
+        background: #ffb347;
+        box-shadow: 0 12px 0 #a0643b, 0 20px 30px rgba(0, 0, 0, 0.3);
+        color: #d63333;
+      }
+      70% {
+        transform: scale(1.9);
+        background: #ff8c42;
+        opacity: 0.9;
+      }
+      100% {
+        transform: scale(2.6);
+        opacity: 0;
+        background: #ff6b6b;
+      }
+    }
+
+    .card.eliminating::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 32px;
+      background: rgba(255, 215, 0, 0.4);
+      animation: flash 0.4s ease infinite alternate;
+      z-index: -1;
+    }
+
+    @keyframes flash {
+      from { opacity: 0.2; }
+      to { opacity: 0.9; }
+    }
+
+    /* ===== 中心大字母动画 ===== */
+    .big-letter-center {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.2);
+      font-size: 18rem;
+      font-weight: bold;
+      color: #ff5e5e;
+      text-shadow: 
+        0 0 20px #fff,
+        8px 8px 0 #ffb347,
+        12px 12px 0 rgba(255, 140, 66, 0.5);
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded', sans-serif;
+      transition: none;
+      line-height: 1;
+    }
+
+    .big-letter-center.show {
+      animation: bigLetterPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes bigLetterPop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.2) rotate(-15deg);
+        color: #ff5e5e;
+      }
+      25% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.3) rotate(5deg);
+        color: #ffb347;
+        text-shadow: 0 0 30px #ffe066, 10px 10px 0 #ff8c42;
+      }
+      50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.0) rotate(0deg);
+        color: #ffd700;
+        text-shadow: 0 0 40px #fff, 12px 12px 0 #ff6b6b;
+      }
+      75% {
+        opacity: 0.95;
+        transform: translate(-50%, -50%) scale(1.1) rotate(-3deg);
+        color: #ff8c42;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5) rotate(6deg);
+        color: #ff5e5e;
+      }
+    }
+
+    /* ===== 胜利全屏动画 ===== */
+    .win-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 245, 230, 0.9);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+
+    .win-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .win-title {
+      font-size: 5rem;
+      color: #ff5e5e;
+      text-shadow: 
+        0 0 30px #fff,
+        8px 8px 0 #ffb347,
+        14px 14px 0 rgba(255, 140, 66, 0.4);
+      animation: winBounce 0.7s infinite alternate;
+      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded', sans-serif;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    @keyframes winBounce {
+      from { transform: translateY(0) scale(1); }
+      to { transform: translateY(-20px) scale(1.08); }
+    }
+
+    .win-time {
+      font-size: 2.4rem;
+      color: #4a7c59;
+      background: #d4edda;
+      padding: 16px 40px;
+      border-radius: 60px;
+      border: 4px solid #8bc9a8;
+      box-shadow: 0 8px 0 #6ba37f;
+      margin-bottom: 30px;
+      font-weight: bold;
+    }
+
+    .win-emoji {
+      font-size: 6rem;
+      margin-bottom: 20px;
+      animation: spinEmoji 1.2s linear infinite;
+    }
+
+    @keyframes spinEmoji {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .win-btn {
+      background: #fecb8a;
+      border: none;
+      border-radius: 60px;
+      padding: 18px 44px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #4b2e1a;
+      box-shadow: 0 8px 0 #b37b52;
+      cursor: pointer;
+      font-family: inherit;
+      border: 3px solid #fff1d6;
+      transition: all 0.08s;
+    }
+
+    .win-btn:active {
+      box-shadow: 0 2px 0 #b37b52;
+      transform: translateY(6px);
+    }
+
+    .button-area {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      background: #fecb8a;
+      border: none;
+      border-radius: 60px;
+      padding: 16px 34px;
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #4b2e1a;
+      box-shadow: 0 8px 0 #b37b52, 0 6px 16px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: all 0.08s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 3px solid #fff1d6;
+      transform: translateY(0);
+    }
+
+    .btn:active {
+      box-shadow: 0 2px 0 #b37b52;
+      transform: translateY(6px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      box-shadow: 0 4px 0 #7a5a44;
+      transform: translateY(4px);
+      pointer-events: none;
+      filter: grayscale(0.3);
+    }
+
+    .win-message {
+      margin-top: 8px;
+      font-size: 2.4rem;
+      color: #b3412b;
+      text-shadow: 3px 3px 0 #ffc9a2;
+      animation: bounce 0.8s infinite alternate;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-8px); }
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .hint {
+      color: #7a5e4b;
+      font-size: 1.15rem;
+      margin-top: 10px;
+      background: #ffedd9;
+      padding: 6px 24px;
+      border-radius: 40px;
+      border: 2px solid #bd9a82;
+      text-align: center;
+    }
+
+    .sound-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 16px;
+      font-size: 1rem;
+      color: #6b4f3b;
+      background: #ffe6c7;
+      padding: 4px 16px;
+      border-radius: 40px;
+      border: 2px solid #cbad94;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .sound-toggle:hover {
+      background: #ffdbaf;
+    }
+
+    .sound-toggle input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #b86b3a;
+    }
+
+    .voice-badge {
+      background: #ffb6c1;
+      border-radius: 30px;
+      padding: 4px 14px;
+      font-size: 0.95rem;
+      color: #7a2e3b;
+      border: 2px solid #e68a9e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: normal;
+    }
+
+    .voice-badge span {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    @media (max-width: 600px) {
+      .card {
+        width: 58px;
+        height: 58px;
+        font-size: 2.4rem;
+      }
+      .grid {
+        gap: 8px;
+        padding: 14px;
+      }
+      h1 { font-size: 2rem; }
+      .btn { font-size: 1.2rem; padding: 12px 22px; }
+      .big-letter-center { font-size: 12rem; }
+      .win-title { font-size: 3rem; }
+      .win-time { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+  <h1>
+    <span>🐢</span> 字母消消乐 <span>🐼</span>
+  </h1>
+  <div class="score-board">
+    ⭐ 剩余 <span id="remainingCount">36</span>
+    <div class="timer-badge">
+      ⏱️ <span id="timerDisplay">00:00</span>
+    </div>
+    <div class="voice-badge">
+      <span>👩</span> 慢速女声
+    </div>
+    <label class="sound-toggle" title="点击字母时是否发音">
+      <input type="checkbox" id="soundEnabled" checked> 🔊 发音
+    </label>
+  </div>
+
+  <div id="grid" class="grid"></div>
+
+  <div class="button-area">
+    <button class="btn" id="resetBtn">🔄 再来一局</button>
+    <button class="btn" id="shuffleBtn">🎲 洗牌</button>
+  </div>
+
+  <div class="hint">✨ 26字母池随机12个 ✨ 三个相同消除（大字母+读音）✨</div>
+</div>
+
+<!-- 中间大字母显示 -->
+<div id="bigLetter" class="big-letter-center"></div>
+
+<!-- 胜利全屏覆盖层 -->
+<div id="winOverlay" class="win-overlay">
+  <div class="win-emoji">🏆</div>
+  <div class="win-title">🎉 挑战成功！ 🎉</div>
+  <div class="win-time">⏱️ 用时：<span id="winTime">00:00</span></div>
+  <button class="win-btn" id="winResetBtn">🎮 再玩一次</button>
+</div>
+
+<script>
+  (function() {
+    // ---------- 游戏配置 ----------
+    const ROWS = 6;
+    const COLS = 6;
+    const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    
+    let grid = [];
+    let selectedCells = [];
+    let gameFinished = false;
+    let isProcessing = false;
+    let lockAfterEliminate = false;
+
+    // 计时相关
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let timerRunning = false;
+
+    // 发音相关
+    let soundEnabled = true;
+    const soundCheckbox = document.getElementById('soundEnabled');
+    const synth = window.speechSynthesis;
+    let voices = [];
+    let femaleVoice = null;
+
+    // DOM 元素
+    const gridEl = document.getElementById('grid');
+    const remainingSpan = document.getElementById('remainingCount');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const resetBtn = document.getElementById('resetBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const bigLetterEl = document.getElementById('bigLetter');
+    const winOverlay = document.getElementById('winOverlay');
+    const winTimeSpan = document.getElementById('winTime');
+    const winResetBtn = document.getElementById('winResetBtn');
+
+    // ========== 音效生成 (Web Audio API) ==========
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    // 错误提示音：低沉双音
+    function playErrorSound() {
+      try {
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        
+        // 第一声
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(220, now);
+        osc1.frequency.exponentialRampToValueAtTime(110, now + 0.2);
+        gain1.gain.setValueAtTime(0.15, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.25);
+        
+        // 第二声
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(180, now + 0.15);
+        osc2.frequency.exponentialRampToValueAtTime(90, now + 0.35);
+        gain2.gain.setValueAtTime(0.15, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.4);
+      } catch (e) { /* 忽略音频错误 */ }
+    }
+
+    // 胜利提示音：上行欢快琶音
+    function playWinSound() {
+      try {
+        const ctx = getAudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.15);
+          gain.gain.setValueAtTime(0.2, now + i * 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.15);
+          osc.stop(now + i * 0.15 + 0.35);
+        });
+      } catch (e) { /* 忽略音频错误 */ }
+    }
+
+    // ========== 语音加载 ==========
+    function loadVoices() {
+      if (!synth) return;
+      voices = synth.getVoices();
+      const femaleNames = [
+        'samantha', 'zira', 'aria', 'jenny', 'google us english',
+        'karen', 'moira', 'tessa', 'victoria', 'susan', 'allison',
+        'ava', 'emma', 'mia', 'salli', 'joanna', 'kendra', 'kimberly',
+        'female', 'woman', 'girl'
+      ];
+      let candidates = voices.filter(v => v.lang === 'en-US' || v.lang === 'en_US');
+      femaleVoice = candidates.find(v => 
+        femaleNames.some(name => v.name.toLowerCase().includes(name))
+      );
+      if (!femaleVoice) {
+        const enVoices = voices.filter(v => v.lang.startsWith('en'));
+        femaleVoice = enVoices.find(v => 
+          femaleNames.some(name => v.name.toLowerCase().includes(name))
+        );
+      }
+      if (!femaleVoice) {
+        femaleVoice = candidates[0] || voices.find(v => v.lang.startsWith('en')) || voices[0];
+      }
+    }
+
+    loadVoices();
+    if (synth && synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = () => { loadVoices(); };
+    }
+
+    // 播报字母 (慢速女声美式)
+    function speakLetter(letter) {
+      if (!soundEnabled || !synth) return;
+      synth.cancel();
+
+      if (voices.length === 0) {
+        loadVoices();
+        setTimeout(() => {
+          if (femaleVoice || voices.length > 0) speakLetter(letter);
+        }, 100);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(letter);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.65;
+      utterance.pitch = 1.25;
+      utterance.volume = 1;
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      } else {
+        const fallback = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+        if (fallback) utterance.voice = fallback;
+      }
+
+      synth.speak(utterance);
+    }
+
+    // ========== 计时器 ==========
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      stopTimer();
+      elapsedSeconds = 0;
+      timerDisplay.textContent = '00:00';
+      timerRunning = true;
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        timerDisplay.textContent = formatTime(elapsedSeconds);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      timerRunning = false;
+    }
+
+    // ========== 工具函数 ==========
+    function countRemaining() {
+      let count = 0;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c] !== null) count++;
+        }
+      }
+      return count;
+    }
+
+    function updateStatusAndCheckWin() {
+      const remaining = countRemaining();
+      remainingSpan.textContent = remaining;
+
+      if (remaining === 0 && !gameFinished) {
+        gameFinished = true;
+        stopTimer();
+        // 播放胜利音效
+        playWinSound();
+        // 显示胜利遮罩
+        winTimeSpan.textContent = formatTime(elapsedSeconds);
+        winOverlay.classList.add('show');
+        // 延迟一点再朗读 "Congratulations"
+        if (soundEnabled && synth) {
+          setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance('Congratulations! You win!');
+            utterance.lang = 'en-US';
+            utterance.rate = 0.8;
+            utterance.pitch = 1.2;
+            if (femaleVoice) utterance.voice = femaleVoice;
+            synth.speak(utterance);
+          }, 600);
+        }
+      }
+    }
+
+    function clearSelected() {
+      selectedCells.forEach(({ r, c }) => {
+        const cell = document.querySelector(`.card[data-row="${r}"][data-col="${c}"]`);
+        if (cell) cell.classList.remove('selected');
+      });
+      selectedCells = [];
+    }
+
+    // 生成可解网格（26字母随机12个，每个3次）
+    function generateSolvableGrid() {
+      const shuffledAll = [...ALL_LETTERS];
+      for (let i = shuffledAll.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]];
+      }
+      const selectedLetters = shuffledAll.slice(0, 12);
+
+      const pool = [];
+      selectedLetters.forEach(letter => {
+        for (let i = 0; i < 3; i++) pool.push(letter);
+      });
+
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      const newGrid = [];
+      let idx = 0;
+      for (let r = 0; r < ROWS; r++) {
+        const row = [];
+        for (let c = 0; c < COLS; c++) {
+          row.push(pool[idx++]);
+        }
+        newGrid.push(row);
+      }
+      return newGrid;
+    }
+
+    function shuffleRemaining() {
+      const letters = [];
+      const positions = [];
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c] !== null) {
+            letters.push(grid[r][c]);
+            positions.push({ r, c });
+          }
+        }
+      }
+      for (let i = letters.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [letters[i], letters[j]] = [letters[j], letters[i]];
+      }
+      positions.forEach((pos, idx) => { grid[pos.r][pos.c] = letters[idx]; });
+      renderGrid();
+      clearSelected();
+      updateStatusAndCheckWin();
+    }
+
+    function renderGrid() {
+      gridEl.innerHTML = '';
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const letter = grid[r][c];
+          const card = document.createElement('div');
+          card.className = 'card';
+          if (letter === null) {
+            card.classList.add('eliminated');
+          } else {
+            card.textContent = letter;
+            card.dataset.row = r;
+            card.dataset.col = c;
+            card.dataset.letter = letter;
+          }
+          card.addEventListener('click', () => handleCardClick(r, c));
+          gridEl.appendChild(card);
+        }
+      }
+      selectedCells = [];
+    }
+
+    // 显示中间大字母 + 同时发音
+    function showBigLetterAndSpeak(letter) {
+      bigLetterEl.textContent = letter;
+      bigLetterEl.classList.remove('show');
+      void bigLetterEl.offsetWidth;
+      bigLetterEl.classList.add('show');
+
+      speakLetter(letter);
+
+      setTimeout(() => {
+        bigLetterEl.classList.remove('show');
+      }, 950);
+    }
+
+    // 消除逻辑
+    function eliminateSelected() {
+      isProcessing = true;
+      lockAfterEliminate = true;
+
+      const cellsToEliminate = [...selectedCells];
+      const letterToRead = grid[cellsToEliminate[0].r][cellsToEliminate[0].c];
+
+      cellsToEliminate.forEach(({ r, c }) => {
+        const card = document.querySelector(`.card[data-row="${r}"][data-col="${c}"]`);
+        if (card) card.classList.add('eliminating');
+      });
+
+      showBigLetterAndSpeak(letterToRead);
+
+      setTimeout(() => {
+        cellsToEliminate.forEach(({ r, c }) => { grid[r][c] = null; });
+        renderGrid();
+        selectedCells = [];
+        updateStatusAndCheckWin();
+
+        setTimeout(() => {
+          isProcessing = false;
+          lockAfterEliminate = false;
+        }, 400);
+      }, 650);
+    }
+
+    // 处理三个不一样：错误抖动 + 错误音
+    function handleWrongSelection() {
+      // 播放错误音
+      playErrorSound();
+      
+      // 卡片抖动
+      selectedCells.forEach(({ r, c }) => {
+        const card = document.querySelector(`.card[data-row="${r}"][data-col="${c}"]`);
+        if (card) {
+          card.classList.add('wrong');
+        }
+      });
+
+      // 短暂锁定
+      isProcessing = true;
+      setTimeout(() => {
+        // 移除抖动样式并清除选中
+        selectedCells.forEach(({ r, c }) => {
+          const card = document.querySelector(`.card[data-row="${r}"][data-col="${c}"]`);
+          if (card) {
+            card.classList.remove('wrong');
+            card.classList.remove('selected');
+          }
+        });
+        selectedCells = [];
+        isProcessing = false;
+      }, 550);
+    }
+
+    // 卡片点击
+    function handleCardClick(r, c) {
+      if (gameFinished || isProcessing || lockAfterEliminate) return;
+      if (grid[r][c] === null) return;
+
+      const letter = grid[r][c];
+      speakLetter(letter);
+
+      const card = document.querySelector(`.card[data-row="${r}"][data-col="${c}"]`);
+      if (card) {
+        card.classList.add('speaking');
+        setTimeout(() => card.classList.remove('speaking'), 400);
+      }
+
+      const alreadySelectedIndex = selectedCells.findIndex(cell => cell.r === r && cell.c === c);
+
+      if (alreadySelectedIndex !== -1) {
+        selectedCells.splice(alreadySelectedIndex, 1);
+        if (card) card.classList.remove('selected');
+        return;
+      }
+
+      if (selectedCells.length < 3) {
+        selectedCells.push({ r, c });
+        if (card) card.classList.add('selected');
+
+        if (selectedCells.length === 3) {
+          const letters = selectedCells.map(({ r, c }) => grid[r][c]);
+          if (letters[0] !== null && letters[0] === letters[1] && letters[1] === letters[2]) {
+            eliminateSelected();
+          } else {
+            // 三个不一样：错误提示
+            handleWrongSelection();
+          }
+        }
+      } else {
+        clearSelected();
+        selectedCells.push({ r, c });
+        if (card) card.classList.add('selected');
+      }
+    }
+
+    // 重置游戏
+    function resetGame() {
+      gameFinished = false;
+      isProcessing = false;
+      lockAfterEliminate = false;
+      selectedCells = [];
+      winOverlay.classList.remove('show');
+      bigLetterEl.classList.remove('show');
+      if (synth) synth.cancel();
+
+      grid = generateSolvableGrid();
+      renderGrid();
+      updateStatusAndCheckWin();
+      startTimer();
+    }
+
+    function handleShuffle() {
+      if (gameFinished || isProcessing || lockAfterEliminate) return;
+      if (countRemaining() === 0) return;
+      clearSelected();
+      shuffleRemaining();
+    }
+
+    function init() {
+      resetGame();
+
+      soundCheckbox.addEventListener('change', (e) => {
+        soundEnabled = e.target.checked;
+        if (!soundEnabled && synth) synth.cancel();
+      });
+
+      resetBtn.addEventListener('click', () => {
+        isProcessing = false;
+        lockAfterEliminate = false;
+        resetGame();
+      });
+
+      shuffleBtn.addEventListener('click', handleShuffle);
+
+      winResetBtn.addEventListener('click', () => {
+        winOverlay.classList.remove('show');
+        isProcessing = false;
+        lockAfterEliminate = false;
+        resetGame();
+      });
+
+      document.body.addEventListener('click', function once() {
+        loadVoices();
+        document.body.removeEventListener('click', once);
+      }, { once: true });
+    }
+
+    init();
+
+    window.addEventListener('beforeunload', () => {
+      if (synth) synth.cancel();
+      stopTimer();
+    });
+  })();
+</script>
+</body>
+</html>
